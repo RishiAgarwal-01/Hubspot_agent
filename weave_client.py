@@ -7,7 +7,7 @@ Flow:
 
 import logging
 import requests
-from config import WEAVE_TRIGGER_URL, WEAVE_API_KEY
+from config import WEAVE_TRIGGER_URL, WEAVE_API_KEY, WEAVE_TEAM_ID
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def build_trigger_payload(deal: dict) -> dict:
         if not _val(props, field)
     ]
 
-    return {
+    input_data = {
         # Core identifiers
         "deal_id":               deal.get("id", ""),
         "deal_name":             _val(props, "dealname") or "",
@@ -64,6 +64,9 @@ def build_trigger_payload(deal: dict) -> dict:
         "trigger_source":        "hubspot_cos_delivery",
     }
 
+    # Weave expects the payload wrapped under the "input_data" key
+    return {"input_data": input_data}
+
 
 def fire_trigger(deal: dict) -> bool:
     """
@@ -75,21 +78,22 @@ def fire_trigger(deal: dict) -> bool:
         return False
 
     payload = build_trigger_payload(deal)
-    headers = {"Content-Type": "application/json"}
-    if WEAVE_API_KEY:
-        headers["Authorization"] = f"Bearer {WEAVE_API_KEY}"
+    deal_id = payload["input_data"]["deal_id"]
+
+    headers = {
+        "Content-Type":  "application/json",
+        "Authorization": f"Bearer {WEAVE_API_KEY}",
+        "team-id":       WEAVE_TEAM_ID,
+    }
 
     try:
         resp = requests.post(WEAVE_TRIGGER_URL, json=payload, headers=headers, timeout=10)
         resp.raise_for_status()
-        logger.info(
-            "Weave trigger fired for deal %s — status %s",
-            payload["deal_id"],
-            resp.status_code,
-        )
+        logger.info("Weave trigger fired for deal %s — status %s", deal_id, resp.status_code)
         return True
     except requests.HTTPError as exc:
-        logger.error("Weave trigger HTTP error for deal %s: %s", payload["deal_id"], exc)
+        logger.error("Weave trigger HTTP error for deal %s: %s — response: %s",
+                     deal_id, exc, exc.response.text if exc.response else "")
     except Exception as exc:
-        logger.error("Weave trigger failed for deal %s: %s", payload["deal_id"], exc)
+        logger.error("Weave trigger failed for deal %s: %s", deal_id, exc)
     return False

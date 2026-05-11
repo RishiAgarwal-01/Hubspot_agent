@@ -11,10 +11,15 @@ PORT = int(os.getenv("PORT", 5000))
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 # Weave AI agent trigger
-# Paste the POST URL that Weave shows after you save the trigger.
-WEAVE_TRIGGER_URL: str = os.getenv("WEAVE_TRIGGER_URL", "")
-# Optional bearer token if Weave requires authentication.
-WEAVE_API_KEY: str = os.getenv("WEAVE_API_KEY", "")
+WEAVE_TRIGGER_URL: str = os.getenv(
+    "WEAVE_TRIGGER_URL",
+    "https://weave.c24.tech/api/v1/execution/6a01716d6cee0781f8a0765d/run",
+)
+WEAVE_API_KEY: str = os.getenv(
+    "WEAVE_API_KEY",
+    "exec_w_5EZKrZhSnBCui92-eeZCsUnJg63D6NjKy4fW-_Fbc",
+)
+WEAVE_TEAM_ID: str = os.getenv("WEAVE_TEAM_ID", "6912eb397d0bd58868444c88")
 
 # HubSpot internal stage IDs that belong to the "Upcoming delivery Awaiting COS" view.
 # Add or remove stage values to match your pipeline configuration.
