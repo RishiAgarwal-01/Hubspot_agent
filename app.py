@@ -7,7 +7,7 @@ import threading
 from flask import Flask, request, jsonify
 
 import config
-from agent import process_webhook_event
+from agent import process_webhook_event, process_cos_delivery_event
 
 logging.basicConfig(
     level=logging.DEBUG if config.DEBUG else logging.INFO,
@@ -39,17 +39,55 @@ def _verify_hubspot_signature(req: request) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# COS stage detection
+# ---------------------------------------------------------------------------
+
+def _is_cos_stage_entry(event: dict) -> bool:
+    """
+    Return True when:
+      - a deal is newly created directly in an Awaiting COS stage, OR
+      - a deal's dealstage property just changed to an Awaiting COS stage.
+    """
+    sub_type = event.get("subscriptionType", "")
+    prop_value = str(event.get("propertyValue", "")).lower()
+
+    if sub_type == "deal.creation":
+        # The creation event's propertyValue for dealstage will hold the initial stage
+        return any(stage.lower() in prop_value for stage in config.AWAITING_COS_STAGES)
+
+    if sub_type == "deal.propertyChange" and event.get("propertyName") == "dealstage":
+        return any(stage.lower() in prop_value for stage in config.AWAITING_COS_STAGES)
+
+    return False
+
+
+# ---------------------------------------------------------------------------
 # Background event processing
 # ---------------------------------------------------------------------------
 
 def _process_events_async(events: list[dict]):
     for event in events:
+        deal_id = str(event.get("objectId", ""))
+        sub_type = event.get("subscriptionType", "")
+
         try:
-            summary = process_webhook_event(event)
+            if _is_cos_stage_entry(event):
+                # Deal just entered (or was created in) an Awaiting COS stage
+                previous_stage = event.get("previousValue", "")
+                logger.info(
+                    "COS delivery trigger fired — deal %s entered stage '%s' (was '%s')",
+                    deal_id,
+                    event.get("propertyValue", ""),
+                    previous_stage,
+                )
+                summary = process_cos_delivery_event(deal_id, previous_stage)
+            else:
+                summary = process_webhook_event(event)
+
             logger.info(
                 "Agent processed event [%s / %s]: %s",
-                event.get("subscriptionType"),
-                event.get("objectId"),
+                sub_type,
+                deal_id,
                 summary,
             )
         except Exception:
@@ -79,19 +117,25 @@ def webhook():
     if not isinstance(events, list):
         events = [events]
 
-    # Filter to only supported object types
-    supported = {"contact.creation", "contact.propertyChange", "deal.creation", "deal.propertyChange"}
+    # Accept deal and contact events; COS routing happens inside _process_events_async
+    supported = {
+        "deal.creation",
+        "deal.propertyChange",
+        "contact.creation",
+        "contact.propertyChange",
+    }
     filtered = [e for e in events if e.get("subscriptionType") in supported]
 
     if not filtered:
         return jsonify({"received": len(events), "processed": 0}), 200
 
-    # Process events in a background thread so HubSpot gets a fast 200 response
+    # Return 200 immediately — HubSpot expects a fast response
     thread = threading.Thread(target=_process_events_async, args=(filtered,), daemon=True)
     thread.start()
 
-    logger.info("Queued %d event(s) for agent processing", len(filtered))
-    return jsonify({"received": len(events), "queued": len(filtered)}), 200
+    cos_count = sum(1 for e in filtered if _is_cos_stage_entry(e))
+    logger.info("Queued %d event(s) (%d COS delivery trigger(s))", len(filtered), cos_count)
+    return jsonify({"received": len(events), "queued": len(filtered), "cos_triggers": cos_count}), 200
 
 
 # ---------------------------------------------------------------------------
