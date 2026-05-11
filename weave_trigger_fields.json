@@ -1,0 +1,104 @@
+[
+  {
+    "type": "String",
+    "name": "deal_id",
+    "sample_value": "59981138466",
+    "can_be_null": false
+  },
+  {
+    "type": "String",
+    "name": "deal_name",
+    "sample_value": "ST84IJ - Shahzad Iqbal (59981138466)",
+    "can_be_null": false
+  },
+  {
+    "type": "String",
+    "name": "deal_stage",
+    "sample_value": "awaiting_refurb_gfd",
+    "can_be_null": false
+  },
+  {
+    "type": "String",
+    "name": "pipeline",
+    "sample_value": "Primary Deal Pipeline",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "delivery_state",
+    "sample_value": "VIC",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "payment_mode",
+    "sample_value": "100% Online",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "trade_in_opted",
+    "sample_value": "No",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "booked_delivery_slot",
+    "sample_value": "2026-05-20",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "contract_signed_date",
+    "sample_value": "2026-05-11",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "document_handling",
+    "sample_value": "Contract sent through Portal",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "finance_gfd_date",
+    "sample_value": "2026-05-05",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "refurb_gfd_date",
+    "sample_value": "2026-11-05",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "registered_date",
+    "sample_value": "2026-11-05",
+    "can_be_null": true
+  },
+  {
+    "type": "String",
+    "name": "missing_fields",
+    "sample_value": "booked_delivery_slot, contract_signed_date",
+    "can_be_null": true
+  },
+  {
+    "type": "Boolean",
+    "name": "has_missing_fields",
+    "sample_value": true,
+    "can_be_null": false
+  },
+  {
+    "type": "Number",
+    "name": "missing_field_count",
+    "sample_value": 2,
+    "can_be_null": false
+  },
+  {
+    "type": "String",
+    "name": "trigger_source",
+    "sample_value": "hubspot_cos_delivery",
+    "can_be_null": false
+  }
+]

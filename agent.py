@@ -2,6 +2,7 @@ import json
 import logging
 import anthropic
 import hubspot_client as hs
+import weave_client
 from config import ANTHROPIC_API_KEY
 
 logger = logging.getLogger(__name__)
@@ -222,8 +223,20 @@ def _run_agent_loop(system_prompt: str, user_message: str) -> str:
 def process_cos_delivery_event(deal_id: str, previous_stage: str = "") -> str:
     """
     Triggered when a deal enters (or is created in) an Awaiting COS delivery stage.
-    The agent fetches the full deal, checks all required fields, and flags any gaps.
+
+    Steps:
+      1. Fetch the full deal from HubSpot immediately.
+      2. Fire the Weave trigger with the structured deal payload.
+      3. Run the Claude agent to validate fields and flag gaps in HubSpot.
     """
+    # Step 1 — fetch the deal now so we can pass real data to Weave
+    try:
+        deal = hs.get_cos_deal(deal_id)
+        weave_client.fire_trigger(deal)
+    except Exception:
+        logger.exception("Failed to pre-fetch deal %s for Weave trigger", deal_id)
+
+    # Step 2 — run the full Claude validation loop
     required_fields_info = "\n".join(f"  - {f}" for f in COS_REQUIRED_FIELDS)
 
     system_prompt = (

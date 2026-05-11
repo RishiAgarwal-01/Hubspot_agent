@@ -10,6 +10,12 @@ FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-secret-change-in-prod")
 PORT = int(os.getenv("PORT", 5000))
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
+# Weave AI agent trigger
+# Paste the POST URL that Weave shows after you save the trigger.
+WEAVE_TRIGGER_URL: str = os.getenv("WEAVE_TRIGGER_URL", "")
+# Optional bearer token if Weave requires authentication.
+WEAVE_API_KEY: str = os.getenv("WEAVE_API_KEY", "")
+
 # HubSpot internal stage IDs that belong to the "Upcoming delivery Awaiting COS" view.
 # Add or remove stage values to match your pipeline configuration.
 # These are the dealstage internal values (visible in HubSpot → Settings → Deals → Pipelines).
